@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>oncotrials: authorization callback</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 640px; margin: 3rem auto; padding: 0 1rem; color: #222; }
+  code, textarea { font-family: ui-monospace, Menlo, monospace; }
+  textarea { width: 100%; height: 6rem; font-size: 0.9rem; }
+  a.btn, button { display: inline-block; padding: 0.6rem 1rem; border: 1px solid #444; border-radius: 4px; background: #fff; color: #222; text-decoration: none; cursor: pointer; font-size: 1rem; }
+  .muted { color: #666; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<h1>Authorization received</h1>
+<p id="status">Reading the response from the patient portal…</p>
+<p><a id="forward" class="btn" href="#" hidden>Continue to the local app</a></p>
+<p class="muted" id="fallback" hidden>If the button does not work, copy the text below and paste it into the terminal where the script is waiting.</p>
+<textarea id="payload" readonly hidden></textarea>
+<p><button id="copy" hidden>Copy</button></p>
+<p class="muted">This page stores nothing and contacts no server. It only passes the one-time authorization code from the patient portal to a program running on your own computer.</p>
+<script>
+(function () {
+  var q = new URLSearchParams(window.location.search);
+  var code = q.get("code"), state = q.get("state"), err = q.get("error"), desc = q.get("error_description");
+  var status = document.getElementById("status");
+  if (err) { status.textContent = "The portal returned an error: " + err + (desc ? " (" + desc + ")" : ""); return; }
+  if (!code) { status.textContent = "No authorization code was found in this address. Start the login again from the script."; return; }
+  var port = q.get("port") || "8765";
+  var local = "http://localhost:" + port + "/callback?code=" + encodeURIComponent(code) + (state ? "&state=" + encodeURIComponent(state) : "");
+  status.textContent = "Authorization code received. Click the button to hand it to the local app.";
+  var a = document.getElementById("forward"); a.href = local; a.hidden = false;
+  var ta = document.getElementById("payload"); ta.value = JSON.stringify({ code: code, state: state }); ta.hidden = false;
+  document.getElementById("fallback").hidden = false;
+  var b = document.getElementById("copy"); b.hidden = false;
+  b.onclick = function () { ta.select(); try { navigator.clipboard.writeText(ta.value); b.textContent = "Copied"; } catch (e) { document.execCommand("copy"); b.textContent = "Copied"; } };
+})();
+</script>
+</body>
+</html>
